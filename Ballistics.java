@@ -2,6 +2,7 @@ import static edu.wpi.first.units.Units.*; // library for units, (e.g. MetersPer
 
 import javax.lang.model.util.ElementScanner14;
 
+import edu.wpi.first.units.VelocityUnit;
 import edu.wpi.first.units.measure.*; // library for types (e.g. LinearAcceleration)
 
 public class Ballistics {
@@ -57,160 +58,183 @@ public class Ballistics {
 
     public Ballistics() {
         //System.out.print("Hello.");
-
+        _heightRobot = Foot.of(3.0);
+        _heightTarget = Foot.of(8.67);
     }
 
     Distance HubHeightToMaxHeight()
     {
-        double t1 = (_heightTarget.minus(_heightRobot);
-        double t2 = _xInput + _xTarget;
-        double t3 = _heightAboveHub - _heightRobot;
-        double t4 = _xTarget * _xInput * (_xInput + _xTarget);
+        double t1 = (_heightTarget.minus(_heightRobot)).magnitude();
+        double t2 = _xInput.magnitude() + _xTarget.magnitude();
+        double t3 = _heightAboveHub.magnitude() - _heightRobot.magnitude();
+        double t4 = _xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude());
 
-        double aValue = (_xInput * (_heightTarget - _heightRobot) - (_xInput + _xTarget) * (_heightAboveHub - _heightRobot)) / (_xTarget * _xInput * (_xInput + _xTarget));
-        double bValue = ((_xInput + _xTarget) * (_xInput + _xTarget) * (_heightAboveHub - _heightRobot) - _xInput * _xInput * (_heightTarget - _heightRobot)) / (_xTarget * _xInput * (_xInput + _xTarget));
+        double aValue = (_xInput.magnitude() * (_heightTarget.magnitude() - _heightRobot.magnitude()) - (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.magnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
+        double bValue = ((_xInput.magnitude() + _xTarget.magnitude()) * (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.magnitude()) - _xInput.magnitude() * _xInput.magnitude() * (_heightTarget.magnitude() - _heightRobot.magnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
 
-        _heightMax = -1.0 * bValue * bValue / (4.0 * aValue) + _heightRobot;
+        _heightMax = Meter.of(-1.0 * bValue * bValue / (4.0 * aValue) + _heightRobot.magnitude());
 
         // frc::SmartDashboard::PutNumber("HubHeightToMaxHeight", units::foot_t(_heightMax).to<double>());
 
         return _heightMax;
     }
 
-    second_t CalcTimeOne()
+    Time CalcTimeOne()
     {
-    _timeOne = math::sqrt(2.0 * (_heightMax - _heightRobot) / gravity);
-
-    return _timeOne;
+        // C++ Code: _timeOne = math::sqrt(2.0 * (_heightMax - _heightRobot) / gravity);
+        _timeOne = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightRobot.magnitude()) / gravity.magnitude()));
+        return _timeOne;
     }
 
-    second_t CalcTimeTwo()
+    Time CalcTimeTwo()
     {
-    _timeTwo = math::sqrt(2.0 * (_heightMax - _heightTarget) / gravity);
-
-    return _timeTwo;
+        // C++ Code: _timeTwo = math::sqrt(2.0 * (_heightMax - _heightTarget) / gravity);
+        _timeTwo = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightTarget.magnitude()) /gravity.magnitude()));
+        return _timeTwo;
     }
 
-    second_t CalcTotalTime()
+    Time CalcTotalTime()
     {
-    _timeTotal = CalcTimeOne() + CalcTimeTwo();
- 
-    Velocity vyfinal = _velYInit - gravity * _timeTotal;
-    Velocity vxfinal = _velXInit; // No drag
-    radian_t beta = units::math::atan(vyfinal / vxfinal);
-    _landingAngle = beta;
 
-    return _timeTotal;
+    /*
+     *  C++ Code: 
+     * 
+        m_timeTotal = CalcTimeOne() + CalcTimeTwo();
+
+        // Estimate the landing angle
+        // final vy = v0 - gt
+        meters_per_second_t vyfinal = m_velYInit - gravity * m_timeTotal;
+        meters_per_second_t vxfinal = m_velXInit; // No drag
+        radian_t beta = units::math::atan(vyfinal / vxfinal);
+        m_landingAngle = beta;
+        qDebug("m_landingAngle %.3f CalcTotalTime()", m_landingAngle);
+
+        return m_timeTotal;
+     */
+
+        _timeTotal = CalcTimeOne().plus(CalcTimeTwo());
+
+        // TODO: Why is this calculation in this method? Surely it should be its own method, as calculating the landing angle is a byproduct of this method
+        LinearVelocity vyfinal = MetersPerSecond.of(_velYInit.magnitude() - gravity.magnitude() * _timeTotal.magnitude());
+        LinearVelocity vxfinal = _velXInit; // No drag
+        Angle beta = Radian.of(Math.atan(vyfinal.magnitude() / vxfinal.magnitude()));
+        _landingAngle = beta;
+        return _timeTotal;
     }
 
-    Velocity CalcInitXVel()
+    LinearVelocity CalcInitXVel()
     {
-    _velXInit = (_xInput + _xTarget) / CalcTotalTime();
+        /*
+         * C++ Code:
+         *   // Without drag, v(t) = v0
+            // x(t) = v0 * t
+            // init vx = "total x dist" over time
+            m_velXInit = (m_xInput + m_xTarget) / CalcTotalTime();
 
-    return _velXInit;
+            return m_velXInit;
+         */
+        _velXInit = MetersPerSecond.of((_xInput.magnitude() + _xTarget.magnitude()) / CalcTotalTime().magnitude());
+
+        return _velXInit;
     }
 
-    Velocity CalcInitYVel()
+    LinearVelocity CalcInitYVel()
     {
-    _velYInit = math::sqrt(2.0 * gravity * (_heightMax - _heightRobot));
+        /*
+         * C++ Code:
+         *     // vy only affected by gravity
+                // square root of 2gh where h is the highest point
+                // Derived from h = 1/2 V0^2/g
+                m_velYInit = math::sqrt(2.0 * gravity * (m_heightMax - m_heightRobot));
 
-    return _velYInit;
+            return m_velYInit;
+         */
+        _velYInit = MetersPerSecond.of(Math.sqrt(2.0 * gravity.magnitude()* (_heightMax.magnitude() - _heightRobot.magnitude())));
+
+        return _velYInit;
     }
 
-    Velocity CalcInitVel()
+    LinearVelocity CalcInitVel()
     {
-    // _heightAboveHub = foot_t(frc::SmartDashboard::GetNumber("HeightAboveHub", 0.0));
-    // _heightTarget = foot_t(frc::SmartDashboard::GetNumber("TargetHeight", 0.0));
-    // _heightRobot = foot_t(frc::SmartDashboard::GetNumber("RobotHeight", 0.0));
-    // _xInput = foot_t(frc::SmartDashboard::GetNumber("FloorHubDistance", 0.0));
-    // _xTarget = foot_t(frc::SmartDashboard::GetNumber("TargetXDistance", 0.0));
+        HubHeightToMaxHeight();
 
-    //_heightAboveHub = foot_t(_heightAboveHubEntry.GetDouble(10.0));
-    // _heightTarget = foot_t(_heightTargetEntry.GetDouble(0.0));
-    // _heightRobot = foot_t(_heightRobotEntry.GetDouble(0.0));
-    // _xInput = foot_t(_xFloorDistanceEntry.GetDouble(0.0));
-    // _xTarget = foot_t(_xTargetDistanceEntry.GetDouble(0.0));
-        
-    HubHeightToMaxHeight();
-
-    CalcInitXVel();
-    CalcInitYVel();
+        CalcInitXVel();
+        CalcInitYVel();
     
-    _angleInit = math::atan(_velYInit / _velXInit);
-    //printf("Angle Before Clamp %.3f\n", _angleInit.to<double>());
-    if (_bClampAngle)
+        _angleInit = Radian.of(Math.atan(_velYInit.magnitude() / _velXInit.magnitude()));   
+
+        if (_bClampAngle)
+        {
+            _angleInit = Degree.of(clamp(_angleInit.magnitude(), minAngle.magnitude(), maxAngle.magnitude()));
+        }
+
+        CalcInitVelWithAngle();
+
+        return _velInit;
+    }
+
+    private double clamp(double min, double max, double value) {
+        double result = value;
+        if (value < min){
+            result = min;
+        }
+        if (value > max){
+            result = max;
+        }
+        return result;
+    }
+
+    LinearVelocity CalcInitVelWithAngle() 
     {
-        _angleInit = degree_t(std::clamp(_angleInit.to<double>(), minAngle.to<double>(), maxAngle.to<double>()));
-    }
-    // printf("Angle After Clamp %.3f\n", _angleInit);
+        Distance totalXDist = _xInput.plus(_xTarget);
+        Distance totalYDist = _heightTarget.minus(_heightRobot);
 
-    CalcInitVelWithAngle();
-    // printf("InitVel %.3f\n", _velInit.to<double>());
-    // printf("InitAngle %.3f\n", _angleInit.to<double>());
-
-    #ifndef WINDOWS_BUILD
-    _initVelEntry.SetDouble(_velInit.to<double>());
-    _initAngleEntry.SetDouble(_angleInit.to<double>());
-    #endif
-
-    // frc::SmartDashboard::PutNumber("InitVel", units::feet_per_second_t(_velInit).to<double>());
-    // frc::SmartDashboard::PutNumber("InitAngle", _angleInit.to<double>());
-
-    return _velInit;
+        _velInit = MetersPerSecond.of(Math.sqrt(gravity.magnitude() * totalXDist.magnitude() * totalXDist.magnitude() / (2.0 * (totalXDist.magnitude() * Math.tan(_angleInit.magnitude()) - totalYDist.magnitude()))) / Math.cos(_angleInit.magnitude()));
+        return _velInit;
     }
 
-    Velocity CalcInitVelWithAngle() {
-    Distance totalXDist = _xInput + _xTarget;
-    Distance totalYDist = _heightTarget - _heightRobot;
-
-    _velInit = math::sqrt(gravity * totalXDist * totalXDist / (2.0 * (totalXDist * math::tan(_angleInit) - totalYDist))) / math::cos(_angleInit);
-    return _velInit;
-    }
-
-    degree_t GetInitAngle()
+    Angle GetInitAngle()
     {
-    return _angleInit;
+        return _angleInit;
     }
 
-    revolutions_per_minute_t CalcInitRPMs(  Distance distance        // Floor distance (to front of cone?)
+    AngularVelocity CalcInitRPMs(  Distance distance        // Floor distance (to front of cone?)
                                                         , Distance targetDist      // Target distance within cone
                                                         , Distance heightAboveHub  // Hub Height to max height
                                                         , Distance targetHeight    // Height at end point within cone
                                                     )
     {
-    _xInput = distance;
-    _xTarget = targetDist;
-    _heightTarget = targetHeight;
-    _heightAboveHub = heightAboveHub;
-    if (_xTarget.to<double>() == 0.0)
-    {
-        //_xTarget = Distance(0.000000001);    // Dividing by this, use 1nm to avoid INF and/or NAN
-        _xTarget = Distance(0.001);    // Dividing by this, use 1mm to avoid INF and/or NAN
+        _xInput = distance;
+        _xTarget = targetDist;
+        _heightTarget = targetHeight;
+        _heightAboveHub = heightAboveHub;
+
+        if (_xTarget.magnitude() == 0.0)
+        {
+            //_xTarget = Distance(0.000000001);    // Dividing by this, use 1nm to avoid INF and/or NAN
+            _xTarget = Meters.of(0.001);    // Dividing by this, use 1mm to avoid INF and/or NAN
+        }
+
+        CalcInitVel();
+
+        // C++ Code:
+        // m_rotVelInit = radian_t(1.0) * m_velInit / m_flywheelRadius * (2.0 + (fuelRotInertiaFrac + 1.0) / (flywheelRotInertiaFrac * m_massRatio));
+        // *** TODO: I AM REALLY UNSURE IF THIS CONVERSION IS CORRECT IN TERMS OF THE MATH. NEED TO DOUBLE CHECK
+        _rotVelInit = RadiansPerSecond.of(Radian.of(1.0).magnitude() * _velInit.magnitude() / flywheelRadius.magnitude() * (2.0 + (cargoRotInertiaFrac + 1.0) / (flywheelRotInertiaFrac * massRatio)));
+        _rpmInit = _rotVelInit;
+
+        return _rpmInit;
     }
 
-    CalcInitVel();
-
-    _rotVelInit = radian_t(1.0) * _velInit / flywheelRadius * (2.0 + (cargoRotInertiaFrac + 1.0) / (flywheelRotInertiaFrac * massRatio));
-    _rpmInit = _rotVelInit;
-
-    #ifndef WINDOWS_BUILD
-    _initRpmEntry.SetDouble(_rpmInit.to<double>());
-    _setpointEntry.SetDouble(_rpmInit.to<double>() / FlywheelConstants::kGearRatio);
-    // frc::SmartDashboard::PutNumber("InitRPM", _rpmInit.to<double>());
-    #endif
-
-    return _rpmInit;
-    }
-
-    radians_per_second_t QuadraticFormula(double a, double b, double c, bool subtract)
+    AngularVelocity QuadraticFormula(double a, double b, double c, boolean subtract)
     {
-    auto outPut = radians_per_second_t(0.0);
-    
-    if (subtract == false)
-        outPut = radians_per_second_t((-1.0 * b + sqrt(b * b - 4 * a * c)) / (2 * a));
-    else
-        outPut = radians_per_second_t((-1.0 * b - sqrt(b * b - 4 * a * c)) / (2 * a));
+        AngularVelocity outPut = RadiansPerSecond.of(0.0);
 
-    return outPut;
+        if (subtract == false)
+            outPut = RadiansPerSecond.of((-1.0 * b + Math.sqrt(b * b - 4 * a * c)) / (2 * a));
+        else
+            outPut = RadiansPerSecond.of((-1.0 * b - Math.sqrt(b * b - 4 * a * c)) / (2 * a));
+
+        return outPut;
     }
 }
