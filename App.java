@@ -7,10 +7,19 @@ public class App {
         System.out.println("Team 1259 Paradigm Shift Ballistics");
         Ballistics ballistic = new Ballistics();
 
-        Distance distToFrontRim = Meter.of(2.0);
-        Distance distIntoCone = Meter.of(0.5);
-        Distance heightAboveRim = Meter.of(1.0);
-        Distance landingHeight = Meter.of(1.5);
+        Distance distToFrontRim = Meter.of(1.47);
+        Distance distIntoCone = Meter.of(0.53);
+        Distance heightAboveRim = Meter.of(0.15);
+        Distance landingHeight = Meter.of(1.73);
+        // Expected output
+        // RPM 3097
+        // Shot angle 60.81
+        // Lanfing angle -39.52
+
+        // Distance distToFrontRim = Meter.of(3.72);
+        // Distance distIntoCone = Meter.of(0.66);
+        // Distance heightAboveRim = Meter.of(0.38);
+        // Distance landingHeight = Meter.of(1.72);
 
         System.out.println("Inputs");
         System.out.println("distToFrontRim " + distToFrontRim.magnitude());

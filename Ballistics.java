@@ -1,8 +1,4 @@
 import static edu.wpi.first.units.Units.*; // library for units, (e.g. MetersPerSecondPerSecond)
-
-//import javax.lang.model.util.ElementScanner14;
-
-//import edu.wpi.first.units.VelocityUnit;
 import edu.wpi.first.units.measure.*; // library for types (e.g. LinearAcceleration)
 
 public class Ballistics {
@@ -23,8 +19,8 @@ public class Ballistics {
     private static final double massRatio = flywheelMass.in(Kilogram) / fuelMass.in(Kilogram);
     //private static final double rotInertiaRatio = flywheelRotInertia.in(KilogramSquareMeters) / fuelRotInertia.in(KilogramSquareMeters);
 
-    private static final Angle maxAngle = Degree.of(80.0);
-    private static final Angle minAngle = Degree.of(20.3);
+    private static final Angle maxAngle = Degree.of(75.0);
+    private static final Angle minAngle = Degree.of(30.3);
 
     //private static final Distance robotHeight = Foot.of(3.0);
     private static final Distance defaultTargetDist = Foot.of(2.5);
@@ -37,7 +33,7 @@ public class Ballistics {
     private Time _timeTotal = Seconds.of(0.0);
 
     private Distance _heightAboveHub = defaultHeightAboveHub;
-    private Distance _heightRobot = Inch.of(25.0);
+    private Distance _heightRobot = Inch.of(30.0);
     private Distance _heightTarget = Foot.of(6.0).minus(Inch.of(4.0));
     private Distance _heightMax = Meter.of(16.0);
 
@@ -62,18 +58,18 @@ public class Ballistics {
     Distance HubHeightToMaxHeight()
     {
         double xInput = _xInput.magnitude();
-        double hTarg = (_heightTarget.minus(_heightRobot)).magnitude();
+        double hTarg = (_heightTarget.minus(_heightRobot)).baseUnitMagnitude();
         double dist = xInput + _xTarget.magnitude();
-        double hAbove = _heightAboveHub.magnitude() - _heightRobot.magnitude();
+        double hAbove = _heightAboveHub.magnitude() - _heightRobot.baseUnitMagnitude();
         double x = _xTarget.magnitude() * xInput * (dist);
 
-//        double aValue = (xInput * hTarg - dist * hAbove) / x;
-//        double bValue = (dist * dist * hAbove - xInput * xInput * hTarg) / x;
+        double aValue = (xInput * hTarg - dist * hAbove) / x;
+        double bValue = (dist * dist * hAbove - xInput * xInput * hTarg) / x;
 
-        double aValue = (_xInput.magnitude() * (_heightTarget.magnitude() - _heightRobot.magnitude()) - (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.magnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
-        double bValue = ((_xInput.magnitude() + _xTarget.magnitude()) * (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.magnitude()) - _xInput.magnitude() * _xInput.magnitude() * (_heightTarget.magnitude() - _heightRobot.magnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
+        //double aValue = (_xInput.magnitude() * (_heightTarget.baseUnitMagnitude() - _heightRobot.baseUnitMagnitude()) - (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.baseUnitMagnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
+        //double bValue = ((_xInput.magnitude() + _xTarget.magnitude()) * (_xInput.magnitude() + _xTarget.magnitude()) * (_heightAboveHub.magnitude() - _heightRobot.baseUnitMagnitude()) - _xInput.magnitude() * _xInput.magnitude() * (_heightTarget.baseUnitMagnitude() - _heightRobot.baseUnitMagnitude())) / (_xTarget.magnitude() * _xInput.magnitude() * (_xInput.magnitude() + _xTarget.magnitude()));
 
-        _heightMax = Meter.of(-1.0 * bValue * bValue / (4.0 * aValue) + _heightRobot.magnitude());
+        _heightMax = Meter.of(bValue * bValue / (4.0 * aValue) + _heightRobot.baseUnitMagnitude());
 
         System.out.println("max height " + _heightMax.magnitude());
 
@@ -83,18 +79,24 @@ public class Ballistics {
     Time CalcTimeOne()
     {
         // C++ Code: _timeOne = math::sqrt(2.0 * (_heightMax - _heightRobot) / gravity);
-        double hMax = _heightMax.baseUnitMagnitude();
-        double hBot = _heightRobot.baseUnitMagnitude();
-        double h = hMax - hBot;
-        double t1 = Math.sqrt(2.0 * h / gravity.magnitude());
-        _timeOne = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightRobot.magnitude()) / gravity.magnitude()));
+        // double hMax = _heightMax.baseUnitMagnitude();
+        // double hBot = _heightRobot.baseUnitMagnitude();
+        // double h = hMax - hBot;
+        // double t1 = Math.sqrt(2.0 * h / gravity.magnitude());
+        _timeOne = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightRobot.baseUnitMagnitude()) / gravity.magnitude()));
+        
+        System.out.println("time 1 " + _timeOne.magnitude());
+
         return _timeOne;
     }
 
     Time CalcTimeTwo()
     {
         // C++ Code: _timeTwo = math::sqrt(2.0 * (_heightMax - _heightTarget) / gravity);
-        _timeTwo = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightTarget.magnitude()) /gravity.magnitude()));
+        _timeTwo = Seconds.of(Math.sqrt(2.0 * (_heightMax.magnitude() - _heightTarget.baseUnitMagnitude()) /gravity.magnitude()));
+
+        System.out.println("time 2 " + _timeTwo.magnitude());
+
         return _timeTwo;
     }
 
@@ -110,6 +112,8 @@ public class Ballistics {
      */
 
         _timeTotal = CalcTimeOne().plus(CalcTimeTwo());
+
+        System.out.println("total time " + _timeTotal.magnitude());
 
         return _timeTotal;
     }
@@ -127,6 +131,8 @@ public class Ballistics {
          */
         _velXInit = MetersPerSecond.of((_xInput.magnitude() + _xTarget.magnitude()) / CalcTotalTime().magnitude());
 
+        System.out.println("Init Vel X " + _velXInit.magnitude());
+
         return _velXInit;
     }
 
@@ -141,7 +147,9 @@ public class Ballistics {
 
             return m_velYInit;
          */
-        _velYInit = MetersPerSecond.of(Math.sqrt(2.0 * gravity.magnitude()* (_heightMax.magnitude() - _heightRobot.magnitude())));
+        _velYInit = MetersPerSecond.of(Math.sqrt(2.0 * gravity.magnitude()* (_heightMax.magnitude() - _heightRobot.baseUnitMagnitude())));
+
+        System.out.println("Init Vel Y " + _velYInit.magnitude());
 
         return _velYInit;
     }
@@ -153,7 +161,9 @@ public class Ballistics {
         CalcInitXVel();
         CalcInitYVel();
     
-        _angleInit = Radian.of(Math.atan(_velYInit.magnitude() / _velXInit.magnitude()));   
+        _angleInit = Degree.of(Math.atan(_velYInit.magnitude() / _velXInit.magnitude()));   
+
+        System.out.println("Init Angle " + _angleInit.magnitude());
 
         if (_bClampAngle && minAngle.magnitude() < maxAngle.magnitude())
         {
@@ -161,6 +171,9 @@ public class Ballistics {
             // If we clamp the angle, we need to recalc the vx and vy as inputs to CalcInitVelWithAngle()
             _velYInit = MetersPerSecond.of(_velInit.magnitude() * Math.sin(_angleInit.magnitude()));
             _velXInit = MetersPerSecond.of(_velInit.magnitude() * Math.cos(_angleInit.magnitude()));
+            System.out.println("Init Angle Clamped " + _angleInit.magnitude());
+            System.out.println("Init Vel X Clamped " + _velXInit.magnitude());
+            System.out.println("Init Vel Y Clamped " + _velYInit.magnitude());
         }
 
         CalcInitVelWithAngle();
@@ -190,6 +203,9 @@ public class Ballistics {
         Distance totalYDist = _heightTarget.minus(_heightRobot);
 
         _velInit = MetersPerSecond.of(Math.sqrt(gravity.magnitude() * totalXDist.magnitude() * totalXDist.magnitude() / (2.0 * (totalXDist.magnitude() * Math.tan(_angleInit.magnitude()) - totalYDist.magnitude()))) / Math.cos(_angleInit.magnitude()));
+
+        System.out.println("Init Vel " + _velInit.magnitude());
+
         return _velInit;
     }
 
