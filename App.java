@@ -7,10 +7,11 @@ public class App {
         System.out.println("Team 1259 Paradigm Shift Ballistics");
         Ballistics ballistic = new Ballistics();
 
-        Distance distToFrontRim = Meter.of(1.47);
-        Distance distIntoCone = Meter.of(0.53);
-        Distance heightAboveRim = Meter.of(0.15);
-        Distance landingHeight = Meter.of(1.73);
+//        Distance distToFrontRim = Meter.of(1.47);
+        Distance distToFrontRim = Meter.of(2.466600);
+        Distance distIntoCone = Meter.of(0.5334);
+        Distance heightAboveRim = Meter.of(1.9812);   // How far above Hub to place the shot (includes height of hub)
+        Distance landingHeight = Meter.of(1.7272);
         // Expected output
         // RPM 3097
         // Shot angle 60.81
@@ -22,16 +23,16 @@ public class App {
         // Distance landingHeight = Meter.of(1.72);
 
         System.out.println("Inputs");
-        System.out.println("distToFrontRim " + distToFrontRim.magnitude());
-        System.out.println("distIntoCone " + distIntoCone.magnitude());
-        System.out.println("heightAboveRim " + heightAboveRim.magnitude());
-        System.out.println("landingHeight " + landingHeight.magnitude());
+        System.out.println("distToFrontRim " + distToFrontRim);
+        System.out.println("distIntoCone " + distIntoCone);
+        System.out.println("heightAboveRim " + heightAboveRim);
+        System.out.println("landingHeight " + landingHeight);
 
         AngularVelocity rpms = ballistic.CalcInitRPMs(distToFrontRim, distIntoCone, heightAboveRim, landingHeight);
         System.out.println("Outputs");
-        System.out.println("Init velocity " + ballistic.getInitVelocity().magnitude());
-        System.out.println("RPM " + rpms.magnitude());
-        System.out.println("Init angle " + ballistic.getInitAngle().magnitude());
-        System.out.println("Landing angle " + ballistic.getLandingAngle().magnitude());
+        System.out.println("Init velocity " + ballistic.getInitVelocity());
+        System.out.println("RPM " + rpms);
+        System.out.println("Init angle " + ballistic.getInitAngle());
+        System.out.println("Landing angle " + ballistic.getLandingAngle());
     }
 }
